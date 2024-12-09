@@ -11,5 +11,5 @@ model:
 distill:
   IPC: 1
   kernel: FCNN
-  generate_from_real_data: True
+  generate_from_real_data: False
   reg_s: False

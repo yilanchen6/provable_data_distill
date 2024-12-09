@@ -46,7 +46,7 @@ conda activate data_distill
 Set `IPC=1` and `kernel=identity`, run
 
 ```
-python distill.py --config config/distill.yaml
+python distill.py
 ```
 
 For MNIST, 
@@ -63,7 +63,7 @@ set `IPC=10` or `IPC=50` and `kernel=identity`.
 Set `generate_from_real_data=True`,
 
 ```
-python distill.py --config config/distill.yaml
+python distill.py
 ```
 
 To generate distilled data from random noise, 
