@@ -318,13 +318,15 @@ def train(config, device, save_path):
 
 
     if generate_from_real_data:
+        if channel > 1:
+            Xs_init = Xs_init.reshape(-1, channel, im_size[0], im_size[1])
 
         if config.data.zca_whiten:
             Xs_init = zca_trans.inverse_transform(Xs_init.reshape(-1, channel, im_size[0], im_size[1])).clip(min=0., max=1.)
         else:
             Xs_init = reverse_trans(Xs_init)
         print('difference between Xs and Xs_init: ', torch.nn.MSELoss()(Xs_init.reshape(Xs_list.size()), Xs_list))
-        np.savez(save_path + '/init_data.npz', distilled_data=Xs_init.cpu().numpy())
+        np.savez(save_path + '/init_data.npz', init_data=Xs_init.cpu().numpy())
 
         Xs_plot = Xs_list[:10].detach()
         fig, axs = plt.subplots(2, 10, figsize=(5 * 10, 6 * 2))

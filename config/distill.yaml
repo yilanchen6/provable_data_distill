@@ -2,7 +2,7 @@ data:
 #  dataset: MNIST
   dataset: CIFAR100
   zca_whiten: False
-  gpu: 1
+  gpu: 0
 
 model:
   seed: 1
