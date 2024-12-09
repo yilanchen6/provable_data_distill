@@ -171,50 +171,53 @@ def train(config, device, save_path):
     #     ntk_s = phi_s.T @ phi_s
     #     Ws = Ys @ torch.inverse(ntk_s) @ phi_s.T
     # else:
-    for _ in range(100):  # sample a Z either from real data or from random noise
 
-        if generate_from_real_data: # compute Z such that the distilled data are close to some real data
+    # for _ in range(100):  # sample a Z either from real data or from random noise
 
-            temp = []
-            for i in range(num_classes):
-                # temp.append(X_batch[Y_batch_copy == i][:IPC])
-                sampled_imgs, _ = random_sample(X_batch[Y_batch_copy == i], IPC)
-                temp.append(sampled_imgs)
-            Xs_init = []
-            for i in range(IPC):
-                for y in range(num_classes):
-                    Xs_init.append(temp[y][i])
-            Xs_init = torch.stack(Xs_init).flatten(1)
-            if 'random_fourier' in config.distill.kernel:
-                phi_s_init = cal_feature((A, b), Xs_init)
-            else:
-                phi_s_init = cal_feature(net, Xs_init)
+    if generate_from_real_data: # compute Z such that the distilled data are close to some real data
 
-            if reg_s:
-                U_hat, S_hat, Vh_hat = torch.linalg.svd(phi_s_init, full_matrices=False)
-                S_hat_reg = torch.diag(S_hat / (S_hat ** 2 + lambda_s))
-                Ys_init = W @ U_hat @ torch.inverse(S_hat_reg) @ Vh_hat
-                if torch.linalg.matrix_rank(Ys_init) == num_classes:
-                    Ys = Ys_init
-                    Ys_psdinv = torch.linalg.pinv(Ys)
-                Z = (torch.eye(m, device=device) - Ys_psdinv @ Ys) @ (Vh_hat.T @ S_hat_reg @ U_hat.T - Ys_psdinv @ W)
-            else:
-                if torch.linalg.matrix_rank(W @ phi_s_init) == num_classes:
-                    Ys = W @ phi_s_init
-                    Ys_psdinv = torch.linalg.pinv(Ys)
-                Z = (torch.eye(m, device=device) - Ys_psdinv @ Ys) @ (torch.linalg.pinv(phi_s_init) - Ys_psdinv @ W)
+        temp = []
+        for i in range(num_classes):
+            # temp.append(X_batch[Y_batch_copy == i][:IPC])
+            sampled_imgs, _ = random_sample(X_batch[Y_batch_copy == i], IPC)
+            temp.append(sampled_imgs)
+        Xs_init = []
+        for i in range(IPC):
+            for y in range(num_classes):
+                Xs_init.append(temp[y][i])
+        Xs_init = torch.stack(Xs_init).flatten(1)
+        if 'random_fourier' in config.distill.kernel:
+            phi_s_init = cal_feature((A, b), Xs_init)
+        else:
+            phi_s_init = cal_feature(net, Xs_init)
 
-        else:   # sample Z as random noise
-            Z = torch.randn(size=(m, p), device=device) * torch.std(Ys_psdinv @ W) * 0.1
-            # Z = torch.randn(size=(m, d), device=device) * torch.std(Ys_psdinv @ W)
+        if reg_s:
+            U_hat, S_hat, Vh_hat = torch.linalg.svd(phi_s_init, full_matrices=False)
+            S_hat_reg = torch.diag(S_hat / (S_hat ** 2 + lambda_s))
+            Ys_init = W @ U_hat @ torch.inverse(S_hat_reg) @ Vh_hat
+            if torch.linalg.matrix_rank(Ys_init) == num_classes:
+                Ys = Ys_init
+                Ys_psdinv = torch.linalg.pinv(Ys)
+            Z = (torch.eye(m, device=device) - Ys_psdinv @ Ys) @ (Vh_hat.T @ S_hat_reg @ U_hat.T - Ys_psdinv @ W)
+        else:
+            if torch.linalg.matrix_rank(W @ phi_s_init) == num_classes:
+                Ys = W @ phi_s_init
+                Ys_psdinv = torch.linalg.pinv(Ys)
+            Z = (torch.eye(m, device=device) - Ys_psdinv @ Ys) @ (torch.linalg.pinv(phi_s_init) - Ys_psdinv @ W)
 
+    else:   # sample Z as random noise
+        Z = torch.randn(size=(m, p), device=device) * torch.std(Ys_psdinv @ W) * 0.1
+        # Z = torch.randn(size=(m, d), device=device) * torch.std(Ys_psdinv @ W)
+    if IPC==1:
+        D = Ys_psdinv @ W
+    else:
         D = Ys_psdinv @ W + (torch.eye(m, device=device) - Ys_psdinv @ Ys) @ Z
 
-        if torch.linalg.matrix_rank(D) == min(m, p) or reg_s:
-            break
-    else:   # if there is no regularization and we didn't sample a full rank D
-        print('Rank of D: ', torch.linalg.matrix_rank(D))
-        raise ValueError('D is singular and there is no regularization')
+    #     if torch.linalg.matrix_rank(D) == min(m, p) or reg_s:
+    #         break
+    # else:   # if there is no regularization and we didn't sample a full rank D
+    #     print('Rank of D: ', torch.linalg.matrix_rank(D))
+    #     raise ValueError('D is singular and there is no regularization')
 
     if reg_s:
         V, S, Uh = torch.linalg.svd(D, full_matrices=False)

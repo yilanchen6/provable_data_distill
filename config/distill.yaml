@@ -5,11 +5,11 @@ data:
   gpu: 0
 
 model:
-  seed: 1
+  seed: 0
   hidden_layer: 1
 
 distill:
   IPC: 1
-  kernel: FCNN
+  kernel: identity
   generate_from_real_data: False
   reg_s: False

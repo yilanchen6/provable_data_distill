@@ -13,5 +13,5 @@ model:
 
 distill:
   IPC: 10
-  kernel: NNGP
+  kernel: FCNN
   generate_from_real_data: True
